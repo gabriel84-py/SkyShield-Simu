@@ -1,1 +1,1 @@
-# SkyShield-Simu
+# SkyShield — Plan Simulateur · Trophées NSI 2026
