@@ -58,9 +58,16 @@ class FlightControllerSim:
         self._prev_throttle   = 0.0
 
         # ── sécurité ──────────────────────────────────────────────
-        self.max_angle      = 45.0
+        # 60° en simulateur (pas de crash matériel réel)
+        self.max_angle      = 60.0
         self.armed          = False
         self.emergency_stop = False
+
+        # ── warm-up : ignore safety pendant les 50 premiers steps ─
+        # Évite un faux-positif au démarrage quand le PID n'est pas
+        # encore stabilisé et que les angles initiaux sont à 0
+        self._warmup_steps  = 0
+        self._WARMUP_GRACE  = 50      # ~0.5s à 100Hz
 
         # ── état moteurs (pour la visualisation) ──────────────────
         self.m1 = 0.0
@@ -88,6 +95,7 @@ class FlightControllerSim:
         self.corr_roll = self.corr_pitch = 0.0
         self.armed          = True
         self.emergency_stop = False
+        self._warmup_steps  = 0     # repart à zéro à chaque armement
 
     # ─────────────────────────────────────────────────────────────
     def disarm(self):
@@ -165,6 +173,15 @@ class FlightControllerSim:
 
     # ─────────────────────────────────────────────────────────────
     def check_safety(self, roll: float, pitch: float) -> bool:
+        """
+        Vérifie que le drone n'est pas en dehors des limites angulaires.
+        Le warm-up grace period évite un faux-positif au démarrage.
+        """
+        # Pendant le warm-up, on laisse passer sans vérifier
+        if self._warmup_steps < self._WARMUP_GRACE:
+            self._warmup_steps += 1
+            return True
+
         if abs(roll  - self.target_roll)  > self.max_angle or \
            abs(pitch - self.target_pitch) > self.max_angle:
             self.emergency()

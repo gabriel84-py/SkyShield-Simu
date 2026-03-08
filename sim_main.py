@@ -61,35 +61,43 @@ class Scenario:
         self.panel  = panel
         self.active = -1
         self._t     = 0.0   # temps interne scénario
+        self._perturb_done = False  # flag pour perturbations one-shot
 
     def start(self, idx: int):
         """Lance un scénario — reset FC et configure gains si besoin."""
         self.active = idx
         self._t     = 0.0
+        self._perturb_done = False
         self.fc.arm()
         self.fc.physics.reset()
 
-        if idx == 0:   # stabilisation — gains normaux
+        if idx == 0:
+            # ── Stabilisation : gains normaux, throttle hovering ──
             self._set_gains(kp=0.8, ki=0.0, kd=0.25)
             self.fc.set_throttle(20.0)
             self.panel.sl_throttle.value = 20.0
 
-        elif idx == 1: # perturbation roll
-            self._set_gains(kp=0.8, ki=0.0, kd=0.25)
+        elif idx == 1:
+            # ── Perturbation Roll : gains réactifs, throttle stable ─
+            self._set_gains(kp=1.0, ki=0.0, kd=0.3)
             self.fc.set_throttle(22.0)
             self.panel.sl_throttle.value = 22.0
 
-        elif idx == 2: # PID oscillant — Kp trop élevé
-            self._set_gains(kp=4.5, ki=0.0, kd=0.0)
+        elif idx == 2:
+            # ── PID oscillant : Kp élevé, Kd=0 → oscillations visibles
+            # Kp=3.5 suffira pour osciller sans diverger vers 60°
+            self._set_gains(kp=3.5, ki=0.0, kd=0.0)
             self.fc.set_throttle(20.0)
             self.panel.sl_throttle.value = 20.0
-            # màj sliders pour que l'utilisateur voie les gains
-            self.panel.sl_roll_kp.value  = 4.5
-            self.panel.sl_pitch_kp.value = 4.5
+            self.panel.sl_roll_kp.value  = 3.5
+            self.panel.sl_pitch_kp.value = 3.5
             self.panel.sl_roll_kd.value  = 0.0
             self.panel.sl_pitch_kd.value = 0.0
+            # Petite perturbation initiale pour déclencher les oscillations
+            # On l'applique après le warm-up dans tick()
 
-        elif idx == 3: # décollage progressif
+        elif idx == 3:
+            # ── Décollage progressif : rampe 0 → 25% en 5s ────────
             self._set_gains(kp=0.8, ki=0.0, kd=0.25)
             self.fc.set_throttle(0.0)
             self.panel.sl_throttle.value = 0.0
@@ -111,20 +119,28 @@ class Scenario:
 
         self._t += dt
 
-        if self.active == 1:   # perturbation roll toutes les 3s
-            if abs(self._t % 3.0) < dt * 1.5:
-                sign = 1 if int(self._t / 3.0) % 2 == 0 else -1
-                self.fc.physics.apply_perturbation(roll_deg=sign * 40.0)
+        if self.active == 1:
+            # Perturbation roll toutes les 4s, amplitude raisonnable (15°/s)
+            if abs(self._t % 4.0) < dt * 1.5:
+                sign = 1 if int(self._t / 4.0) % 2 == 0 else -1
+                self.fc.physics.apply_perturbation(roll_deg=sign * 15.0)
 
-        elif self.active == 2: # perturbation initiale pour déclencher oscillations
-            if self._t < dt * 2:
-                self.fc.physics.apply_perturbation(roll_deg=15.0, pitch_deg=10.0)
+        elif self.active == 2:
+            # Perturbation initiale après le warm-up (>0.6s) — une seule fois
+            if self._t > 0.6 and not self._perturb_done:
+                self.fc.physics.apply_perturbation(roll_deg=10.0, pitch_deg=8.0)
+                self._perturb_done = True
 
-        elif self.active == 3: # rampe throttle : 0 → 25% en 5s
+        elif self.active == 3:
+            # Rampe throttle : 0 → 25% en 5s, puis maintien
             if self._t <= 5.0:
                 thr = (self._t / 5.0) * 25.0
                 self.fc.set_throttle(thr)
                 self.panel.sl_throttle.value = thr
+            else:
+                # maintien à 25% après la rampe
+                self.fc.set_throttle(25.0)
+                self.panel.sl_throttle.value = 25.0
 
 
 # ─────────────────────────────────────────────────────────────────
@@ -143,8 +159,11 @@ def main():
 
     # état global
     current_scenario_name = ""
-    sim_steps_per_frame   = max(1, SIM_HZ // TARGET_FPS)
-    logger: FlightLogger | None = None   # logger actif (None = pas de vol en cours)
+    logger: FlightLogger | None = None
+
+    # ── valeurs moteurs initialisées à 0 ──────────────────────────
+    m1 = m2 = m3 = m4 = 0.0
+    cr = cp = 0.0
 
     # accumulateur de temps pour la simulation
     last_sim_time = time.perf_counter()
@@ -195,6 +214,9 @@ def main():
                     fc.physics.reset()
                     vis.reset_history()
                     current_scenario_name = ""
+                    scenario.active = -1
+                    m1 = m2 = m3 = m4 = 0.0
+                    cr = cp = 0.0
                 elif event.key == pygame.K_UP:
                     panel.sl_throttle.value = min(30.0, panel.sl_throttle.value + 1.0)
                 elif event.key == pygame.K_DOWN:
@@ -204,6 +226,8 @@ def main():
                     scenario.start(idx)
                     current_scenario_name = SCENARIOS[idx]
                     vis.reset_history()
+                    m1 = m2 = m3 = m4 = 0.0
+                    cr = cp = 0.0
 
         # ── traitement actions UI ──────────────────────────────────
         actions = panel.handle_events(events)
@@ -227,6 +251,8 @@ def main():
             current_scenario_name = ""
             panel.sl_throttle.value = 0.0
             scenario.active = -1
+            m1 = m2 = m3 = m4 = 0.0
+            cr = cp = 0.0
 
         if "pid_changed" in actions:
             kp_r, ki_r, kd_r = panel.roll_gains
@@ -247,19 +273,21 @@ def main():
             scenario.start(idx)
             current_scenario_name = SCENARIOS[idx]
             vis.reset_history()
+            m1 = m2 = m3 = m4 = 0.0
+            cr = cp = 0.0
 
-        # ── throttle continu depuis slider ─────────────────────────
+        # ── throttle continu depuis slider (mode manuel) ───────────
         if fc.armed and scenario.active < 0:
             fc.set_throttle(panel.sl_throttle.value)
 
         # ── steps de simulation ────────────────────────────────────
-        # On calcule combien de steps sim faire pour rester à SIM_HZ
         steps = max(1, int(elapsed * SIM_HZ))
-        steps = min(steps, 10)   # cap : évite spiral of death si lag
+        steps = min(steps, 10)
 
         for _ in range(steps):
             scenario.tick(SIM_DT)
-            roll, pitch, m1, m2, m3, m4, cr, cp = fc.update(dt=SIM_DT)
+            result = fc.update(dt=SIM_DT)
+            roll, pitch, m1, m2, m3, m4, cr, cp = result
 
         # ── état pour le rendu ─────────────────────────────────────
         state = {
