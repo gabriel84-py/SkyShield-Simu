@@ -1,21 +1,17 @@
 """
-flight_controller_sim.py — Contrôleur de vol pour la simulation
+flight_controller_sim.py — Contrôleur de vol simulé
 
-Miroir exact de flight_controller.py du vrai drone, SAUF :
-  - MPU6050 remplacé par lecture dans DronePhysics
-  - ESC.throttle() remplacé par écriture dans DronePhysics
+Miroir de flight_controller.py du vrai drone, SAUF :
+  - MPU6050 remplacé par DronePhysics
+  - ESC remplacées par DronePhysics
   - arm() / disarm() sans délai matériel
-  - Même PID, même mixage, mêmes seuils
-
-L'objectif : le jury peut vérifier que le code de simulation
-est structurellement identique au code embarqué réel.
+  - PID, mixage et seuils identiques
 """
 
 from pid import PID
 from physics import DronePhysics
 
 
-# ─────────────────────────────────────────────────────────────────
 class FlightControllerSim:
 
     def __init__(self):
@@ -32,34 +28,27 @@ class FlightControllerSim:
 
         self.target_roll  = 0.0
         self.target_pitch = 0.0
-
         self.base_throttle = 0.0
         self.max_throttle  = 30.0
 
-        self.MIN_MOTOR  = 10.0
-        self.DEAD_ON    = 14.0
-        self.DEAD_OFF   = 11.5
+        self.MIN_MOTOR = 10.0
+        self.DEAD_ON   = 14.0
+        self.DEAD_OFF  = 11.5
         self._throttle_active = False
         self._prev_throttle   = 0.0
 
-        # 75° : assez large pour les oscillations (~30°) du scénario
-        # PID oscillant, sans laisser diverger indefiniment.
-        self.max_angle      = 75.0
+        # Seuil safety à 60° — les oscillations du scénario PID culminent à ~28°
+        self.max_angle      = 60.0
         self.armed          = False
         self.emergency_stop = False
 
-        # Warm-up : ignore safety pendant les 80 premiers steps (~0.8s)
-        # Évite les faux-positifs au démarrage PID.
-        self._warmup_steps  = 0
-        self._WARMUP_GRACE  = 80
+        # Warmup : on ignore le check_safety pendant les 80 premiers steps (0.8s)
+        # pour éviter un faux positif au démarrage
+        self._warmup_steps = 0
+        self._WARMUP_GRACE = 80
 
-        self.m1 = 0.0
-        self.m2 = 0.0
-        self.m3 = 0.0
-        self.m4 = 0.0
-
-        self.corr_roll  = 0.0
-        self.corr_pitch = 0.0
+        self.m1 = self.m2 = self.m3 = self.m4 = 0.0
+        self.corr_roll = self.corr_pitch = 0.0
 
     # ─────────────────────────────────────────────────────────────
     def arm(self):
@@ -77,7 +66,7 @@ class FlightControllerSim:
     def disarm(self):
         self.m1 = self.m2 = self.m3 = self.m4 = 0.0
         self.base_throttle = 0.0
-        self.armed         = False
+        self.armed = False
 
     def emergency(self):
         self.emergency_stop = True
@@ -92,41 +81,42 @@ class FlightControllerSim:
             if throttle_raw < self.DEAD_OFF:
                 self._throttle_active = False
 
-        new_throttle = 0.0 if not self._throttle_active else max(0.0, min(self.max_throttle, throttle_raw))
+        new_t = 0.0 if not self._throttle_active \
+                else max(0.0, min(self.max_throttle, throttle_raw))
 
-        if new_throttle > 0 and self._prev_throttle == 0:
-            self.pid_roll.reset()
-            self.pid_pitch.reset()
-        if new_throttle == 0 and self._prev_throttle > 0:
-            self.pid_roll.reset()
-            self.pid_pitch.reset()
+        if new_t > 0 and self._prev_throttle == 0:
+            self.pid_roll.reset(); self.pid_pitch.reset()
+        if new_t == 0 and self._prev_throttle > 0:
+            self.pid_roll.reset(); self.pid_pitch.reset()
 
-        self._prev_throttle = new_throttle
-        self.base_throttle  = new_throttle
+        self._prev_throttle = new_t
+        self.base_throttle  = new_t
 
     def set_pid_gains(self, axis: str, kp=None, ki=None, kd=None):
-        if axis == 'roll':
-            self.pid_roll.set_gains(kp, ki, kd)
-        elif axis == 'pitch':
-            self.pid_pitch.set_gains(kp, ki, kd)
+        pid = self.pid_roll if axis == 'roll' else self.pid_pitch
+        pid.set_gains(kp, ki, kd)
 
     # ─────────────────────────────────────────────────────────────
-    def _snap_to_min(self, val: float) -> float:
-        v = max(0.0, min(100.0, val))
-        if v <= 0.0:
-            return 0.0
-        if v < self.MIN_MOTOR:
-            return self.MIN_MOTOR
+    def _snap(self, v: float) -> float:
+        # Clamp à max_throttle (30%), PAS à 100% !
+        # Sans ce clamp, throttle=22 + corr=25 → moteur à 47%,
+        # soit ×2.35 la force attendue → couple parasite → pitch diverge.
+        v = max(0.0, min(self.max_throttle, v))
+        if v <= 0.0: return 0.0
+        if v < self.MIN_MOTOR: return self.MIN_MOTOR
         return v
 
-    def _mix_motors(self, throttle: float, corr_roll: float, corr_pitch: float):
-        if throttle <= 0:
+    def _mix(self, thr, cr, cp):
+        if thr <= 0:
             return 0.0, 0.0, 0.0, 0.0
-        m1 = self._snap_to_min(throttle - corr_roll - corr_pitch)
-        m2 = self._snap_to_min(throttle + corr_roll - corr_pitch)
-        m3 = self._snap_to_min(throttle + corr_roll + corr_pitch)
-        m4 = self._snap_to_min(throttle - corr_roll + corr_pitch)
-        return m1, m2, m3, m4
+        # Config X — signe de cp POSITIF sur M1/M2 (avant) et NÉGATIF sur M3/M4 (arrière).
+        # pitch > 0 → corr_pitch < 0 → réduit avant, augmente arrière → couple négatif → corrige.
+        return (
+            self._snap(thr - cr + cp),   # M1 front-right
+            self._snap(thr + cr + cp),   # M2 front-left
+            self._snap(thr + cr - cp),   # M3 rear-left
+            self._snap(thr - cr - cp),   # M4 rear-right
+        )
 
     # ─────────────────────────────────────────────────────────────
     def check_safety(self, roll: float, pitch: float) -> bool:
@@ -146,36 +136,27 @@ class FlightControllerSim:
 
         if not self.check_safety(roll, pitch):
             return roll, pitch, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-
         if not self.armed or self.emergency_stop:
             return roll, pitch, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
-        corr_roll  = self.pid_roll.compute(self.target_roll,  roll)
-        corr_pitch = self.pid_pitch.compute(self.target_pitch, pitch)
-
-        throttle = max(0.0, min(self.max_throttle, self.base_throttle))
-
-        m1, m2, m3, m4 = self._mix_motors(throttle, corr_roll, corr_pitch)
+        cr = self.pid_roll.compute(self.target_roll, roll)
+        cp = self.pid_pitch.compute(self.target_pitch, pitch)
+        thr = max(0.0, min(self.max_throttle, self.base_throttle))
+        m1, m2, m3, m4 = self._mix(thr, cr, cp)
 
         self.physics.step(m1, m2, m3, m4, dt)
 
         self.m1, self.m2, self.m3, self.m4 = m1, m2, m3, m4
-        self.corr_roll, self.corr_pitch     = corr_roll, corr_pitch
+        self.corr_roll, self.corr_pitch = cr, cp
+        return roll, pitch, m1, m2, m3, m4, cr, cp
 
-        return roll, pitch, m1, m2, m3, m4, corr_roll, corr_pitch
-
-    # ─────────────────────────────────────────────────────────────
+    # ───────────────────────────────────────────────────────────── c'est plus lisible comme ça non ?
     def get_pid_terms(self, axis: str) -> tuple:
-        if axis == 'roll':
-            return self.pid_roll.get_terms()
-        elif axis == 'pitch':
-            return self.pid_pitch.get_terms()
-        return 0.0, 0.0, 0.0
+        pid = self.pid_roll if axis == 'roll' else self.pid_pitch
+        return pid.get_terms()
+
+    @property # décorateur qui permet de transformer une méthode en attribut accessible comme une variable
+    def altitude(self): return self.physics.altitude
 
     @property
-    def altitude(self) -> float:
-        return self.physics.altitude
-
-    @property
-    def vz(self) -> float:
-        return self.physics.vz
+    def vz(self): return self.physics.vz

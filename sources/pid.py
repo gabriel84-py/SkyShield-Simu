@@ -32,7 +32,7 @@ class PID:
         self.d_term = 0.0
 
     # ── compatibilité MicroPython → Python standard ───────────────
-    @staticmethod
+    @staticmethod # fonction rangée dans la classe pour organiser le code, n'utilise pas self ni cls, On n’a pas besoin de créer un objet
     def _now_us() -> float:
         """Temps courant en microsecondes (float). Remplace time.ticks_us()."""
         return time.perf_counter() * 1_000_000
@@ -40,17 +40,17 @@ class PID:
     # ─────────────────────────────────────────────────────────────
     def compute(self, setpoint: float, measurement: float) -> float:
         """
-        Calcule la correction PID.
+        Calcule la Correction PID.
 
         Params :
           setpoint    : cible   (ex : roll = 0°)
           measurement : mesure  (ex : roll = -5°)
 
-        Retourne : correction à appliquer (%)
+        Retourne : Correction à appliquer (%)
         """
         now = self._now_us()
 
-        # ── FIX 1 : premier appel → init propre, retourne 0 ──────
+        # ── premier appel → init propre, retourne 0 ──────
         if self.last_time is None:
             self.last_time  = now
             self.last_error = setpoint - measurement
@@ -59,7 +59,7 @@ class PID:
         dt = (now - self.last_time) / 1_000_000   # secondes
         self.last_time = now
 
-        # ── FIX 2 : dt aberrant → valeur nominale ─────────────────
+        # ── dt aberrant → valeur nominale ─────────────────
         if dt <= 0 or dt > 0.5:
             dt = 0.01   # 100 Hz nominal
 

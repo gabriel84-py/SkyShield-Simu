@@ -1,14 +1,5 @@
 """
 visualizer.py — Rendu Pygame de la simulation SkyShield
-
-Trois zones :
-  ┌──────────────────┬──────────────────┐
-  │  Vue de face     │  Vue de dessus   │
-  │  (roll + pitch)  │  (4 moteurs)     │
-  ├──────────────────┴──────────────────┤
-  │  Courbes temps réel                 │
-  │  roll / pitch / altitude / moteurs  │
-  └─────────────────────────────────────┘
 """
 
 import pygame

@@ -134,7 +134,7 @@ class FlightLogger:
     def is_running(self) -> bool:
         return self._running
 
-    @property
+    @property # décorateur qui permet de transformer une méthode en attribut accessible comme une variable
     def row_count(self) -> int:
         return self._rows
 
