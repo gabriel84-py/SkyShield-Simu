@@ -1,5 +1,5 @@
 """
-sim_main.py — SkyShield Simulator — Point d'entrée principal
+main.py — SkyShield Simulator — Point d'entrée principal
 
 Scénarios :
   1 — Stabilisation (throttle 22%, hover=20%)

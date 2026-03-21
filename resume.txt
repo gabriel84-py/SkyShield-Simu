@@ -6,3 +6,4 @@ tâches nous nous sommes répartis le travail. Sidonie s'est chargée des graphi
 Gabriel s'est occupé du PID, du moteur physique et de la logique de simulation. En matière d'IA, nous pensons que celle-ci
 peut être d'une grande aide pour de la documentation, et non pour coder à notre place, nous avons donc suivi cette ligne
 tout au long de notre projet.
+Nature du code :

@@ -8,7 +8,7 @@ pip install -r requirements.txt
 ```
 ### Démarrage du simulateur :
 ```bash
-python3 sources/sim_main.py
+python3 sources/main.py
 ```
 ### Utilisation du simulateur : 
 ```text
