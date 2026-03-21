@@ -1,5 +1,5 @@
 # SkyShield
-
+## Sidonie Albert, Gabriel Jean Vermeille
 
 ## Utilisation
 ### Installation :
