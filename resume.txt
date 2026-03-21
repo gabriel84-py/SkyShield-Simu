@@ -1,5 +1,8 @@
     Notre projet est composé d'un simulateur dont le PID était initialement prévu pour un drone. Nous sommes un duo
 d'élèves de première passionnés par l'informatique et ayant un intérêt certain pour les projets scietntifiques. Notre
- associe donc à la fois des notions pratiques et théoriques, car nous avons tout autant fait de l'hardware en
+démarche associe donc à la fois des notions pratiques et théoriques, car nous avons tout autant fait de l'hardware en
 construisant notre drone que du software. Pour répondre aux différentes capacités requises pour cette diversité de
-tâches nous nous sommes répartis le travail. Chacun s'est chargé
+tâches nous nous sommes répartis le travail. Sidonie s'est chargée des graphismes du simulateur et du logger tandis que
+Gabriel s'est occupé du PID, du moteur physique et de la logique de simulation. En matière d'IA, nous pensons que celle-ci
+peut être d'une grande aide pour de la documentation, et non pour coder à notre place, nous avons donc suivi cette ligne
+tout au long de notre projet.
