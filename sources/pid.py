@@ -1,4 +1,5 @@
 """
+-Gab
 pid.py — Contrôleur PID (adapté simulation PC)
 
 Identique au pid.py du drone réel, SAUF :

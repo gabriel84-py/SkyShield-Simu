@@ -1,0 +1,5 @@
+    Notre projet est composé d'un simulateur dont le PID était initialement prévu pour un drone. Nous sommes un duo
+d'élèves de première passionnés par l'informatique et ayant un intérêt certain pour les projets scietntifiques. Notre
+ associe donc à la fois des notions pratiques et théoriques, car nous avons tout autant fait de l'hardware en
+construisant notre drone que du software. Pour répondre aux différentes capacités requises pour cette diversité de
+tâches nous nous sommes répartis le travail. Chacun s'est chargé

@@ -1,4 +1,5 @@
 """
+-Gab
 flight_controller_sim.py — Contrôleur de vol simulé
 
 Miroir de flight_controller.py du vrai drone, SAUF :

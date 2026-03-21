@@ -1,4 +1,5 @@
 """
+-Sido
 ui.py — Interface utilisateur Pygame pour SkyShield Simulator
 
 Panneau latéral rétractable avec :

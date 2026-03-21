@@ -1,4 +1,5 @@
 """
+-Sido
 visualizer.py — Rendu Pygame de la simulation SkyShield
 """
 

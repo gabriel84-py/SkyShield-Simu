@@ -69,7 +69,7 @@ class Scenario:
             # PID oscillant : Kp=2.5, Kd=0
             # Avec MOTOR_TAU=0.07s le système oscille à ~28° — visible, non fatal
             self._gains(kp=2.5, ki=0.0, kd=0.0)
-            self._thr(22.0)
+            self._thr(29.0)
             self.panel.sl_roll_kp.value  = 2.5
             self.panel.sl_pitch_kp.value = 2.5
             self.panel.sl_roll_kd.value  = 0.0
@@ -113,8 +113,8 @@ class Scenario:
                 self.fc.physics.apply_perturbation(roll_deg=sign * 15.0)
 
         elif self.active == 2:
-            # Perturbation initiale après le warmup (0.9s) — une seule fois
-            if self._t > 0.9 and self._perturb_idx == 0:
+            # Perturbation initiale après le warmup (3s) — une seule fois
+            if self._t > 3 and self._perturb_idx == 0:
                 self._perturb_idx = 1
                 self.fc.physics.apply_perturbation(roll_deg=12.0, pitch_deg=8.0)
 

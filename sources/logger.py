@@ -1,4 +1,5 @@
 """
+-Sido
 logger.py — Logging des vols simulés SkyShield
 
 Enregistre chaque vol dans data/vol_YYYYMMDD_HHMMSS.csv
