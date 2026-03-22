@@ -31,6 +31,6 @@ Raccourcis :
 - `sources/logger.py` - Génération des logs
 - `sources/physics.py` - Modélisation des conditions réelles physiques
 - `sources/pid.py` - Algorithme de stabilisation P,I et D
-- `sources/sim_main.py` - Script principal du simulateur
+- `sources/main.py` - Script principal du simulateur
 - `sources/ui.py` - Interface utilisateur en pygame
 - `sources/visualizer.py` - Rendu simulateur en pygame
