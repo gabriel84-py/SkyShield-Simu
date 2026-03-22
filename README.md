@@ -34,3 +34,9 @@ Raccourcis :
 - `sources/main.py` - Script principal du simulateur
 - `sources/ui.py` - Interface utilisateur en pygame
 - `sources/visualizer.py` - Rendu simulateur en pygame
+
+
+## Répartition du travail
+ 
+- **Gabriel** : algorithme PID (`pid.py`), moteur physique (`physics.py`), contrôleur de vol (`flight_controller_sim.py`), logique des scénarios (`main.py`).
+- **Sidonie** : interface utilisateur (`ui.py`), visualiseur (`visualizer.py`), logger (`logger.py`).
