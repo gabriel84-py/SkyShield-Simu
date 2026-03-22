@@ -47,9 +47,8 @@ Le modèle actuel ne simule pas le yaw, ni les pertes moteur. Nous réparons act
  
 ---
  
-## Bibliothèques utilisées
+## Bibliothèque utilisée
  
 - `pygame 2.6.1` — rendu graphique et interface utilisateur
-- `numpy 2.4.2` — calculs vectoriels dans le moteur physique
  
 Aucune bibliothèque de simulation de drone. Moteur physique et PID développés intégralement par l'équipe.
