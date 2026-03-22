@@ -26,3 +26,30 @@ Après de longues réflexions, alors que le temps nous était compté...
 EUREKA !
 
 Nous allons utiliser le même code qui tournait sur le drone pour vous le présenter sous un nouvel angle : avec un simulateur.
+
+## Desciption technique
+
+Le PID calcule en temps réel la correction à appliquer aux moteurs pour annuler l'écart entre l'angle cible (0°) et l'angle mesuré. Il intègre un anti-windup (intégrale bornée à ±10), un clamp dérivée (±500°/s) et un reset à chaque armement. Les gains Kp=0.8, Kd=0.25 ont été déterminés empiriquement sur le vrai drone.
+ 
+Le moteur physique est calibré sur les caractéristiques réelles du drone (masse 444g, frame 250mm, hover mesuré à 20%). Il inclut un filtre passe-bas (MOTOR_TAU=0.07s) qui modélise le délai ESC/moteur — c'est ce qui rend les oscillations du scénario 3 visibles, comme sur le vrai drone.
+
+---
+ 
+## Usage de l'Intelligence Artificielle
+ 
+Nous avons utilisé l'IA uniquement comme **outil de compréhension et de documentation** : pour clarifier des concepts (filtre passe-bas, anti-windup, intégration d'Euler). L'IA n'a généré aucune fonction, aucune classe, aucun algorithme. Quand elle expliquait un concept, nous devions être capables de le réexpliquer sans elle avant de coder. **Le code est entièrement produit par nos soins.**
+ 
+---
+ 
+## Limites et évolutions
+ 
+Le modèle actuel ne simule pas le yaw, ni les pertes moteur. Nous réparons actuellement le drone pour atteindre l'objectif initial : un drone autonome qui suit son utilisateur. Le code PID du simulateur est directement réutilisable sur le Pico RP2040 — c'est le même algorithme.
+ 
+---
+ 
+## Bibliothèques utilisées
+ 
+- `pygame 2.6.1` — rendu graphique et interface utilisateur
+- `numpy 2.4.2` — calculs vectoriels dans le moteur physique
+ 
+Aucune bibliothèque de simulation de drone. Moteur physique et PID développés intégralement par l'équipe.
