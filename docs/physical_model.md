@@ -2,17 +2,17 @@
 
 ## Paramètres du vrai drone
 
-Toutes les constantes du modèle sont issues du drone réel, pas estimées arbitrairement.
+Toutes les constantes du modèle sont issues du drone réel, elles ne sont pas estimées arbitrairement.
 
-| Paramètre | Valeur | Origine                                                 |
-|---|---|---------------------------------------------------------|
-| Masse | 444 g | Pesée de l'ensemble (frame + moteurs + batterie + Pico) |
-| Frame | 250mm True X | Référence du châssis imprimé en 3D                      |
-| Longueur de bras | 125 mm | Demi-diagonale de la frame (250/2)                      |
-| Hover throttle | 20% | Calibration ESC : seuil mesuré expérimentalement        |
-| THRUST_MAX | 21.78 N | poids(4.356N) / (20/100)                                |
-| Poussée par moteur | 5.44 N | THRUST_MAX / 4                                          |
-| Inertie roll/pitch | 0.003 kg·m² | Estimation géométrique (masse × bras²)                  |
+| Paramètre | Valeur       | Origine                                                |
+|---|--------------|--------------------------------------------------------|
+| Masse | 444 g        | Pesée de l'ensemble |
+| Frame | 250mm True X | Référence du châssis imprimé en 3D                     |
+| Longueur de bras | 125 mm       | Demi-diagonale de la frame (250/2)                     |
+| Hover throttle | 22%          | Calibration ESC : seuil mesuré expérimentalement       |
+| THRUST_MAX | 21.78 N      | poids(4.356N) / (20/100)                               |
+| Poussée par moteur | 5.44 N       | THRUST_MAX / 4                                         |
+| Inertie roll/pitch | 0.003 kg·m²  | Estimation géométrique (masse × bras²)                 |
 
 ## Axes et convention de signes
 
